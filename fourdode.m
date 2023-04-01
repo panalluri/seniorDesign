@@ -1,27 +1,32 @@
 function fourdode
 
-[filename,pathname]=uigetfile('*.nrrd','Select Files', 'MultiSelect', 'on');
-data = nrrdread(fullfile(pathname,filename));
+% [filename,pathname]=uigetfile('*.nrrd','Select Files', 'MultiSelect', 'on');
+data = nrrdread(fullfile('C:\Users\Prani\caam496\','dcedata.nrrd'));
 data = double(data);
 imagesc(data(:,:,10,20)); %plot 2D slice of image   
 
-data = data(1:3,1:3,1:3,:);
+data = data(1:7,1:7,1:7,:);
+%data = data(:,100:end,:,:);
 %data = data(100:200,100:250,10:12,:);
 A = size(data);
+A4 = A(4);
+A3 = A(3);
 K = zeros(A(1),A(2),A(3));
 Ct = zeros(A(1),A(2),A(3),A(4));
+gammaPDF = gampdf(1:A4,2.5,4.5);
+options = optimset('TolX',1e-5,'MaxIter',500); %default tol=1e-4, maxiter=500
 
 for i = 1:A(1)
-    for j = 1:A(2)
-        for k = 1:A(3)
+    parfor j = 1:A(2)
+        for k = 1:A3
             dats = data(i,j,k,:);
-            fun = @(x) find_k(x,dats);
-            [x,~] = fminbnd(fun,0,1000);
+            fun = @(x) find_k(x,dats,gammaPDF);
+            [x,~] = fminbnd(fun,0,1000,options);
             K(i,j,k) = x;
             %disp(x);
-            for l = 1:A(4)
+            for l = 1:A4
                 disp("i = " + i + ", j = " + j + ", k = " + k + ", l = " + l);
-                Ct(i,j,k,l) = find_Ct(x, dats(l), l);
+                Ct(i,j,k,l) = find_Ct(x, dats(l), l, gammaPDF);
             end
         end
     end
